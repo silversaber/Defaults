@@ -5,7 +5,7 @@ let package = Package(
 	name: "Defaults",
 	platforms: [
 		.macOS(.v10_13),
-		.iOS(.v12),
+		.iOS(.v11),
 		.tvOS(.v12),
 		.watchOS(.v5)
 	],
