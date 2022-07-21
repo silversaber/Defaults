@@ -1,13 +1,15 @@
 // MIT License © Sindre Sorhus
 import Foundation
 
-public protocol DefaultsBaseKey: Defaults.AnyKey {
+public protocol DefaultsBaseKey {
 	var name: String { get }
 	var suite: UserDefaults { get }
 }
 
 extension DefaultsBaseKey {
-	/// Reset the item back to its default value.
+	/**
+	Reset the item back to its default value.
+	*/
 	public func reset() {
 		suite.removeObject(forKey: name)
 	}
@@ -15,16 +17,18 @@ extension DefaultsBaseKey {
 
 public enum Defaults {
 	public typealias BaseKey = DefaultsBaseKey
-	public typealias AnyKey = Keys
+	public typealias Keys = AnyKey
 	public typealias Serializable = DefaultsSerializable
 	public typealias CollectionSerializable = DefaultsCollectionSerializable
 	public typealias SetAlgebraSerializable = DefaultsSetAlgebraSerializable
 	public typealias PreferRawRepresentable = DefaultsPreferRawRepresentable
 	public typealias PreferNSSecureCoding = DefaultsPreferNSSecureCoding
 	public typealias Bridge = DefaultsBridge
+	public typealias RangeSerializable = DefaultsRange & DefaultsSerializable
 	typealias CodableBridge = DefaultsCodableBridge
 
-	public class Keys: BaseKey {
+	// We cannot use `Key` as the container for keys because of "Static stored properties not supported in generic types".
+	public class AnyKey: BaseKey {
 		public typealias Key = Defaults.Key
 
 		public let name: String
@@ -39,8 +43,11 @@ public enum Defaults {
 	public final class Key<Value: Serializable>: AnyKey {
 		public let defaultValue: Value
 
-		/// Create a defaults key.
-		/// The `default` parameter can be left out if the `Value` type is an optional.
+		/**
+		Create a defaults key.
+
+		The `default` parameter can be left out if the `Value` type is an optional.
+		*/
 		public init(_ key: String, default defaultValue: Value, suite: UserDefaults = .standard) {
 			self.defaultValue = defaultValue
 
@@ -79,7 +86,21 @@ extension Defaults {
 }
 
 extension Defaults.Key {
-	public convenience init<T: Defaults.Serializable>(_ key: String, suite: UserDefaults = .standard) where Value == T? {
+	public convenience init<T>(_ key: String, suite: UserDefaults = .standard) where Value == T? {
 		self.init(key, default: nil, suite: suite)
+	}
+}
+
+extension Defaults.AnyKey: Equatable {
+	public static func == (lhs: Defaults.AnyKey, rhs: Defaults.AnyKey) -> Bool {
+		lhs.name == rhs.name
+			&& lhs.suite == rhs.suite
+	}
+}
+
+extension Defaults.AnyKey: Hashable {
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(name)
+		hasher.combine(suite)
 	}
 }

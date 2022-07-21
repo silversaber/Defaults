@@ -137,16 +137,31 @@ extension Dictionary: Defaults.Serializable where Key: LosslessStringConvertible
 	public static var bridge: Defaults.DictionaryBridge<Key, Value> { Defaults.DictionaryBridge() }
 }
 
+extension UUID: Defaults.Serializable {
+	public static let bridge = Defaults.UUIDBridge()
+}
 
 @available(iOS 15.0, macOS 11.0, tvOS 15.0, watchOS 8.0, iOSApplicationExtension 15.0, macOSApplicationExtension 11.0, tvOSApplicationExtension 15.0, watchOSApplicationExtension 8.0, *)
 extension Color: Defaults.Serializable {
 	public static let bridge = Defaults.ColorBridge()
 }
 
+extension Range: Defaults.RangeSerializable where Bound: Defaults.Serializable {
+	public static var bridge: Defaults.RangeBridge<Range> { Defaults.RangeBridge() }
+}
+
+extension ClosedRange: Defaults.RangeSerializable where Bound: Defaults.Serializable {
+	public static var bridge: Defaults.RangeBridge<ClosedRange> { Defaults.RangeBridge() }
+}
+
 #if os(macOS)
-/// `NSColor` conforms to `NSSecureCoding`, so it goes to `NSSecureCodingBridge`.
+/**
+`NSColor` conforms to `NSSecureCoding`, so it goes to `NSSecureCodingBridge`.
+*/
 extension NSColor: Defaults.Serializable {}
 #else
-/// `UIColor` conforms to `NSSecureCoding`, so it goes to `NSSecureCodingBridge`.
+/**
+`UIColor` conforms to `NSSecureCoding`, so it goes to `NSSecureCodingBridge`.
+*/
 extension UIColor: Defaults.Serializable {}
 #endif

@@ -21,6 +21,17 @@ For a real-world example, see the [Plash app](https://github.com/sindresorhus/Pl
 - **Debuggable:** The data is stored as JSON-serialized values.
 - **Customizable:** You can serialize and deserialize your own type in your own way.
 
+## Benefits over `@AppStorage`
+
+- You define strongly-typed identifiers in a single place and can use them everywhere.
+- You also define the default values in a single place instead of having to remember what default value you used in other places.
+- You can use it outside of SwiftUI.
+- Comes with Combine publisher.
+- Supports many more types, even `Codable`.
+- Easy to add support for your own custom types.
+- Comes with a convenience SwiftUI `Toggle` component.
+
+
 ## Compatibility
 
 - macOS 10.13+
@@ -36,7 +47,7 @@ For a real-world example, see the [Plash app](https://github.com/sindresorhus/Pl
 	<p>
 		<p>
 			<sup>
-				<a href="https://github.com/sponsors/sindresorhus">Sindre‘s open source work is supported by the community</a>
+				<a href="https://github.com/sponsors/sindresorhus">Sindre's open source work is supported by the community</a>
 			</sup>
 		</p>
 		<sup>Special thanks to:</sup>
@@ -65,6 +76,8 @@ For a real-world example, see the [Plash app](https://github.com/sindresorhus/Pl
 
 Add `https://github.com/sindresorhus/Defaults` in the [“Swift Package Manager” tab in Xcode](https://developer.apple.com/documentation/xcode/adding_package_dependencies_to_your_app).
 
+**There are some issues running Defaults with Xcode 13.3 because of a Swift bug. [See the workaround](workaround.md).**
+
 ## Support types
 
 - `Int(8/16/32/64)`
@@ -77,13 +90,15 @@ Add `https://github.com/sindresorhus/Defaults` in the [“Swift Package Manager�
 - `Date`
 - `Data`
 - `URL`
+- `UUID`
 - `NSColor` (macOS)
 - `UIColor` (iOS)
 - `Color` (SwiftUI)
 - `Codable`
 - `NSSecureCoding`
+- `Range`, `ClosedRange`
 
-Defaults also support the above types wrapped in `Array`, `Set`, `Dictionary`, and even wrapped in nested types. For example, `[[String: Set<[String: Int]>]]`.
+Defaults also support the above types wrapped in `Array`, `Set`, `Dictionary`, `Range`, `ClosedRange`, and even wrapped in nested types. For example, `[[String: Set<[String: Int]>]]`.
 
 For more types, see the [enum example](#enum-example), [`Codable` example](#codable-example), or [advanced Usage](#advanced-usage). For more examples, see [Tests/DefaultsTests](./Tests/DefaultsTests).
 
@@ -94,6 +109,8 @@ If a type conforms to both `NSSecureCoding` and `Codable`, then `Codable` will b
 ## Usage
 
 You declare the defaults keys upfront with type and default value.
+
+**Do not use a dot in the key name, because of [this bug](https://github.com/sindresorhus/Defaults/issues/59).**
 
 ```swift
 import Cocoa

@@ -83,8 +83,8 @@ final class LifetimeAssociation {
 	init(of target: AnyObject, with owner: AnyObject, deinitHandler: @escaping () -> Void = {}) {
 		let wrappedObject = ObjectLifetimeTracker(for: target, deinitHandler: deinitHandler)
 
-		let associatedObjects = LifetimeAssociation.associatedObjects[owner] ?? []
-		LifetimeAssociation.associatedObjects[owner] = associatedObjects + [wrappedObject]
+		let associatedObjects = Self.associatedObjects[owner] ?? []
+		Self.associatedObjects[owner] = associatedObjects + [wrappedObject]
 
 		self.wrappedObject = wrappedObject
 		self.owner = owner
@@ -106,23 +106,28 @@ final class LifetimeAssociation {
 		guard
 			let owner = owner,
 			let wrappedObject = wrappedObject,
-			var associatedObjects = LifetimeAssociation.associatedObjects[owner],
+			var associatedObjects = Self.associatedObjects[owner],
 			let wrappedObjectAssociationIndex = associatedObjects.firstIndex(where: { $0 === wrappedObject })
 		else {
 			return
 		}
 
 		associatedObjects.remove(at: wrappedObjectAssociationIndex)
-		LifetimeAssociation.associatedObjects[owner] = associatedObjects
+		Self.associatedObjects[owner] = associatedObjects
 		self.owner = nil
 	}
 }
 
 
-/// A protocol for making generic type constraints of optionals.
-/// - Note: It's intentionally not including `associatedtype Wrapped` as that limits a lot of the use-cases.
+/**
+A protocol for making generic type constraints of optionals.
+
+- Note: It's intentionally not including `associatedtype Wrapped` as that limits a lot of the use-cases.
+*/
 public protocol _DefaultsOptionalType: ExpressibleByNilLiteral {
-	/// This is useful as you can't compare `_OptionalType` to `nil`.
+	/**
+	This is useful as you cannot compare `_OptionalType` to `nil`.
+	*/
 	var isNil: Bool { get }
 }
 
@@ -146,10 +151,18 @@ extension DispatchQueue {
 
 
 extension Sequence {
-	/// Returns an array containing the non-nil elements.
+	/**
+	Returns an array containing the non-nil elements.
+	*/
 	func compact<T>() -> [T] where Element == T? {
-		// TODO: Make this `compactMap(\.self)` when https://bugs.swift.org/browse/SR-12897 is fixed.
+		// TODO: Make this `compactMap(\.self)` when https://github.com/apple/swift/issues/55343 is fixed.
 		compactMap { $0 }
+	}
+}
+
+extension Collection {
+	subscript(safe index: Index) -> Element? {
+		indices.contains(index) ? self[index] : nil
 	}
 }
 
