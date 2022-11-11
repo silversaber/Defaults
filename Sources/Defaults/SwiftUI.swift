@@ -4,8 +4,10 @@ import Combine
 
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 extension Defaults {
+	@MainActor
 	final class Observable<Value: Serializable>: ObservableObject {
 		private var cancellable: AnyCancellable?
+		private var task: Task<Void, Never>?
 		private let key: Defaults.Key<Value>
 
 		let objectWillChange = ObservableObjectPublisher()
@@ -21,16 +23,34 @@ extension Defaults {
 		init(_ key: Key<Value>) {
 			self.key = key
 
-			self.cancellable = Defaults.publisher(key, options: [.prior])
-				.sink { [weak self] change in
-					guard change.isPrior else {
-						return
-					}
+			// We only use this on the latest OSes (as of adding this) since the backdeploy library has a lot of bugs.
+			if #available(macOS 13, iOS 16, tvOS 16, watchOS 9, *) {
+				// The `@MainActor` is important as the `.send()` method doesn't inherit the `@MainActor` from the class.
+				self.task = .detached(priority: .userInitiated) { @MainActor [weak self] in
+					for await _ in Defaults.events(key) {
+						guard let self else {
+							return
+						}
 
-					DispatchQueue.mainSafeAsync {
-						self?.objectWillChange.send()
+						self.objectWillChange.send()
 					}
 				}
+			} else {
+				self.cancellable = Defaults.publisher(key, options: [.prior])
+					.sink { [weak self] change in
+						guard change.isPrior else {
+							return
+						}
+
+						Task { @MainActor in
+							self?.objectWillChange.send()
+						}
+					}
+			}
+		}
+
+		deinit {
+			task?.cancel()
 		}
 
 		/**
@@ -77,7 +97,7 @@ public struct Default<Value: Defaults.Serializable>: DynamicProperty {
 	*/
 	public init(_ key: Defaults.Key<Value>) {
 		self.key = key
-		self.observable = Defaults.Observable(key)
+		self.observable = .init(key)
 	}
 
 	public var wrappedValue: Value {
@@ -168,7 +188,7 @@ extension Defaults {
 	}
 	```
 	*/
-	public struct Toggle<Label, Key>: View where Label: View, Key: Defaults.Key<Bool> {
+	public struct Toggle<Label: View>: View {
 		@ViewStorage private var onChange: ((Bool) -> Void)?
 
 		private let label: () -> Label
@@ -176,9 +196,9 @@ extension Defaults {
 		// Intentionally using `@ObservedObjected` over `@StateObject` so that the key can be dynamically changed.
 		@ObservedObject private var observable: Defaults.Observable<Bool>
 
-		public init(key: Key, @ViewBuilder label: @escaping () -> Label) {
+		public init(key: Defaults.Key<Bool>, @ViewBuilder label: @escaping () -> Label) {
 			self.label = label
-			self.observable = Defaults.Observable(key)
+			self.observable = .init(key)
 		}
 
 		public var body: some View {
@@ -191,10 +211,10 @@ extension Defaults {
 }
 
 @available(macOS 11, iOS 14, tvOS 14, watchOS 7, *)
-extension Defaults.Toggle where Label == Text {
-	public init<S>(_ title: S, key: Defaults.Key<Bool>) where S: StringProtocol {
+extension Defaults.Toggle<Text> {
+	public init(_ title: some StringProtocol, key: Defaults.Key<Bool>) {
 		self.label = { Text(title) }
-		self.observable = Defaults.Observable(key)
+		self.observable = .init(key)
 	}
 }
 
@@ -206,6 +226,29 @@ extension Defaults.Toggle {
 	public func onChange(_ action: @escaping (Bool) -> Void) -> Self {
 		onChange = action
 		return self
+	}
+}
+
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+extension Defaults {
+	// TODO: Expose this publicly at some point.
+	private static func events<Value: Serializable>(
+		_ key: Defaults.Key<Value>,
+		initial: Bool = true
+	) -> AsyncStream<Value> { // TODO: Make this `some AsyncSequence<Value>` when Swift 6 is out.
+		.init { continuation in
+			let observation = UserDefaultsKeyObservation(object: key.suite, key: key.name) { change in
+				// TODO: Use the `.deserialize` method directly.
+				let value = KeyChange(change: change, defaultValue: key.defaultValue).newValue
+				continuation.yield(value)
+			}
+
+			observation.start(options: initial ? [.initial] : [])
+
+			continuation.onTermination = { _ in
+				observation.invalidate()
+			}
+		}
 	}
 }
 

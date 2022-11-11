@@ -46,14 +46,16 @@ public enum Defaults {
 		/**
 		Create a defaults key.
 
-		The `default` parameter can be left out if the `Value` type is an optional.
+		- Parameter key: The key must be ASCII, not start with `@`, and cannot contain a dot (`.`).
+
+		The `default` parameter should not be used if the `Value` type is an optional.
 		*/
 		public init(_ key: String, default defaultValue: Value, suite: UserDefaults = .standard) {
 			self.defaultValue = defaultValue
 
 			super.init(name: key, suite: suite)
 
-			if (defaultValue as? _DefaultsOptionalType)?.isNil == true {
+			if (defaultValue as? _DefaultsOptionalProtocol)?.isNil == true {
 				return
 			}
 
@@ -86,6 +88,11 @@ extension Defaults {
 }
 
 extension Defaults.Key {
+	/**
+	Create a defaults key.
+
+	- Parameter key: The key must be ASCII, not start with `@`, and cannot contain a dot (`.`).
+	*/
 	public convenience init<T>(_ key: String, suite: UserDefaults = .standard) where Value == T? {
 		self.init(key, default: nil, suite: suite)
 	}
