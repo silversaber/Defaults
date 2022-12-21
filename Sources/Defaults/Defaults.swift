@@ -36,6 +36,7 @@ public enum Defaults {
 }
 
 public typealias _Defaults = Defaults
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, iOSApplicationExtension 13.0, macOSApplicationExtension 10.15, tvOSApplicationExtension 13.0, watchOSApplicationExtension 6.0, *)
 public typealias _Default = Default
 
 extension Defaults {
@@ -290,6 +291,7 @@ extension Defaults {
 	typealias CodableBridge = _DefaultsCodableBridge
 }
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, iOSApplicationExtension 13.0, macOSApplicationExtension 10.15, tvOSApplicationExtension 13.0, watchOSApplicationExtension 6.0, *)
 extension Defaults {
 	/**
 	Observe updates to a stored value.

@@ -155,6 +155,7 @@ extension Collection {
 
 
 extension Collection {
+	@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, iOSApplicationExtension 13.0, macOSApplicationExtension 10.15, tvOSApplicationExtension 13.0, watchOSApplicationExtension 6.0, *)
 	func indexed() -> some Sequence<(Index, Element)> {
 		zip(indices, self)
 	}

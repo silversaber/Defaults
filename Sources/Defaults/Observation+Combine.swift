@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, iOSApplicationExtension 13.0, macOSApplicationExtension 10.15, tvOSApplicationExtension 13.0, watchOSApplicationExtension 6.0, *)
 extension Defaults {
 	/**
 	Custom `Subscription` for `UserDefaults` key observation.
