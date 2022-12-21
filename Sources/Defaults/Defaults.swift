@@ -50,7 +50,13 @@ extension Defaults {
 		public let name: String
 		public let suite: UserDefaults
 
+		@_alwaysEmitIntoClient
 		fileprivate init(name: String, suite: UserDefaults) {
+			runtimeWarn(
+				isValidKeyPath(name: name),
+				"The key name must be ASCII, not start with @, and cannot contain a dot (.)."
+			)
+
 			self.name = name
 			self.suite = suite
 		}
@@ -89,25 +95,27 @@ extension Defaults {
 		- `UserDefaults.object(forKey: string)` returns `nil`
 		- A `bridge` cannot deserialize `Value` from `UserDefaults`
 		*/
-		private let defaultValueGetter: () -> Value
+		@usableFromInline
+		internal let defaultValueGetter: () -> Value
 
 		public var defaultValue: Value { defaultValueGetter() }
 
 		/**
 		Create a key.
 
-		- Parameter key: The key must be ASCII, not start with `@`, and cannot contain a dot (`.`).
+		- Parameter name: The name must be ASCII, not start with `@`, and cannot contain a dot (`.`).
 
 		The `default` parameter should not be used if the `Value` type is an optional.
 		*/
+		@_alwaysEmitIntoClient
 		public init(
-			_ key: String,
+			_ name: String,
 			default defaultValue: Value,
 			suite: UserDefaults = .standard
 		) {
 			self.defaultValueGetter = { defaultValue }
 
-			super.init(name: key, suite: suite)
+			super.init(name: name, suite: suite)
 
 			if (defaultValue as? _DefaultsOptionalProtocol)?.isNil == true {
 				return
@@ -132,31 +140,36 @@ extension Defaults {
 		}
 		```
 
-		- Parameter key: The key must be ASCII, not start with `@`, and cannot contain a dot (`.`).
+		- Parameter name: The name must be ASCII, not start with `@`, and cannot contain a dot (`.`).
 
 		- Note: This initializer will not set the default value in the actual `UserDefaults`. This should not matter much though. It's only really useful if you use legacy KVO bindings.
 		*/
+		@_alwaysEmitIntoClient
 		public init(
-			_ key: String,
+			_ name: String,
 			suite: UserDefaults = .standard,
 			default defaultValueGetter: @escaping () -> Value
 		) {
 			self.defaultValueGetter = defaultValueGetter
 
-			super.init(name: key, suite: suite)
+			super.init(name: name, suite: suite)
 		}
+	}
+}
 
-		/**
-		Create a key with an optional value.
+extension Defaults.Key {
+	// We cannot declare this convenience initializer in class directly because of "@_transparent' attribute is not supported on declarations within classes".
+	/**
+	Create a key with an optional value.
 
-		- Parameter key: The key must be ASCII, not start with `@`, and cannot contain a dot (`.`).
-		*/
-		public convenience init<T>(
-			_ key: String,
-			suite: UserDefaults = .standard
-		) where Value == T? {
-			self.init(key, default: nil, suite: suite)
-		}
+	- Parameter name: The name must be ASCII, not start with `@`, and cannot contain a dot (`.`).
+	*/
+	@_transparent
+	public convenience init<T>(
+		_ name: String,
+		suite: UserDefaults = .standard
+	) where Value == T? {
+		self.init(name, default: nil, suite: suite)
 	}
 }
 
